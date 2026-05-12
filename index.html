@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Epic Idle Empire</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        body { font-family: 'Press Start 2P', cursive; background: #0a0a1f; color: #0ff; margin: 0; padding: 10px; text-align: center; }
+        #cookie { width: 220px; height: 220px; cursor: pointer; transition: transform 0.1s; margin: 20px auto; }
+        #cookie:active { transform: scale(0.9); }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .stats { display: flex; justify-content: space-around; flex-wrap: wrap; }
+        .shop { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 30px; }
+        .item { background: #1a1a3a; padding: 15px; border: 2px solid #0ff; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; }
+        .item:hover { background: #25255a; transform: translateY(-4px); }
+        button { background: #0ff; color: #000; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; font-family: inherit; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Epic Idle Empire</h1>
+        <div id="cookies">0 Cookies</div>
+        <img id="cookie" src="https://picsum.photos/id/1080/300/300" alt="Cookie">
+        <div class="stats">
+            <div>CPS: <span id="cps">0</span></div>
+            <div>Total: <span id="total">0</span></div>
+        </div>
+        <div class="shop" id="shop"></div>
+        <button onclick="prestige()">Prestige (Reset for bonuses)</button>
+    </div>
+
+    <script>
+        let cookies = 0;
+        let totalCookies = 0;
+        let cps = 0;
+        let buildings = [
+            {name: "Cursor", cost: 15, production: 0.1, owned: 0},
+            {name: "Grandma", cost: 100, production: 1, owned: 0},
+            {name: "Farm", cost: 1100, production: 8, owned: 0},
+            {name: "Mine", cost: 12000, production: 47, owned: 0},
+            {name: "Factory", cost: 130000, production: 260, owned: 0}
+        ];
+
+        const cookieImg = document.getElementById('cookie');
+        cookieImg.addEventListener('click', () => {
+            cookies += 1 + Math.floor(totalCookies / 10000);
+            totalCookies += 1;
+            updateDisplay();
+            cookieImg.style.transform = 'scale(1.2)';
+            setTimeout(() => cookieImg.style.transform = 'scale(1)', 80);
+        });
+
+        function updateDisplay() {
+            document.getElementById('cookies').textContent = Math.floor(cookies).toLocaleString() + ' Cookies';
+            document.getElementById('cps').textContent = cps.toFixed(1);
+            document.getElementById('total').textContent = totalCookies.toLocaleString();
+            renderShop();
+        }
+
+        function renderShop() {
+            const shop = document.getElementById('shop');
+            shop.innerHTML = '';
+            buildings.forEach((b, i) => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<strong>${b.name}</strong><br>Cost: ${Math.floor(b.cost).toLocaleString()}<br>Owned: ${b.owned}<br>+${b.production} CPS`;
+                div.onclick = () => buyBuilding(i);
+                shop.appendChild(div);
+            });
+        }
+
+        function buyBuilding(i) {
+            const b = buildings[i];
+            if (cookies >= b.cost) {
+                cookies -= b.cost;
+                b.owned++;
+                cps += b.production;
+                b.cost = Math.floor(b.cost * 1.15);
+                updateDisplay();
+            }
+        }
+
+        function gameLoop() {
+            cookies += cps / 10;
+            totalCookies += cps / 10;
+            updateDisplay();
+        }
+
+        function prestige() {
+            if (confirm('Prestige? You will lose all cookies and buildings but gain permanent multipliers!')) {
+                cookies = 0;
+                totalCookies = 0;
+                cps = 0;
+                buildings.forEach(b => { b.owned = 0; b.cost = b.cost / Math.pow(1.15, b.owned || 5); });
+                updateDisplay();
+            }
+        }
+
+        setInterval(gameLoop, 100);
+        updateDisplay();
+
+        // Save every 30 seconds
+        setInterval(() => {
+            localStorage.setItem('epicIdleSave', JSON.stringify({cookies, totalCookies, buildings, cps}));
+        }, 30000);
+
+        // Load save
+        const saved = localStorage.getItem('epicIdleSave');
+        if (saved) {
+            const data = JSON.parse(saved);
+            cookies = data.cookies || 0;
+            totalCookies = data.totalCookies || 0;
+            buildings = data.buildings || buildings;
+            cps = data.cps || 0;
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
